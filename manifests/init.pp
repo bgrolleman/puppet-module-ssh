@@ -6,7 +6,7 @@ class ssh (
   $hiera_merge                         = false,
   $packages                            = 'USE_DEFAULTS',
   $permit_root_login                   = 'yes',
-  $purge_keys                          = true,
+  $purge_keys                          = false,
   $manage_firewall                     = false,
   $ssh_package_source                  = 'USE_DEFAULTS',
   $ssh_package_adminfile               = 'USE_DEFAULTS',
@@ -745,13 +745,6 @@ class ssh (
     }
   }
 
-  # export each node's ssh key
-  @@sshkey { $::fqdn :
-    ensure => $ssh_key_ensure,
-    type   => $ssh_key_type,
-    key    => $key,
-  }
-
   file { 'ssh_known_hosts':
     ensure => file,
     path   => $ssh_config_global_known_hosts_file,
@@ -760,17 +753,6 @@ class ssh (
     mode   => $ssh_config_global_known_hosts_mode,
   }
 
-  # import all nodes' ssh keys
-  if $ssh_key_import_real == true {
-    Sshkey <<||>> {
-      target => $ssh_config_global_known_hosts_file,
-    }
-  }
-
-  # remove ssh key's not managed by puppet
-  resources  { 'sshkey':
-    purge => $purge_keys_real,
-  }
 
   # manage users' ssh authorized keys if present
   if $keys != undef {
